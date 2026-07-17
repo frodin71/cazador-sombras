@@ -147,9 +147,9 @@ export class Game {
     if (this.tShadow <= 0) {
       this.tShadow = rand(1.4, 2.0) - diff * 0.9
       const sx = rand(20, this.W - 20)
-      // Mezcla: ~54% rápidos (se queman), ~24% acechadores (huyen de la luz), ~22% teletransportadores (la luz los paraliza)
+      // Mezcla más pareja: ~40% rápidos (se queman), ~30% acechadores (huyen de la luz), ~30% teletransportadores (la luz los paraliza)
       const rr = Math.random()
-      const enemy = rr < 0.24 ? new Fleer(sx, -20) : rr < 0.46 ? new Blinker(sx, -20) : new Shadow(sx, -20)
+      const enemy = rr < 0.30 ? new Fleer(sx, -20) : rr < 0.60 ? new Blinker(sx, -20) : new Shadow(sx, -20)
       this.shadows.push(enemy)
     }
     this.tObstacle -= dt * ts

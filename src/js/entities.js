@@ -184,7 +184,7 @@ export class Blinker {
     this.wob = Math.random() * Math.PI * 2
     this.burnable = false
     this.dead = false
-    this.teleTimer = rand(1.0, 1.8)
+    this.teleTimer = rand(0.8, 1.3)
     this.flash = 0
     this.paralyzed = false
   }
@@ -199,9 +199,12 @@ export class Blinker {
     if (this.paralyzed) return // congelado: no baja ni se teletransporta
 
     this.y += (worldSpeed + this.speed) * dt
+    // Se acerca al jugador entre saltos
+    const dx = player.x - this.x
+    this.x += Math.sign(dx) * Math.min(30 * dt, Math.abs(dx))
     this.teleTimer -= dt
     if (this.teleTimer <= 0) {
-      this.teleTimer = rand(1.0, 1.8)
+      this.teleTimer = rand(0.8, 1.3)
       // Solo salta en los 3/4 de arriba; si está cerca del jugador no lo hace
       if (this.y < H * 0.75) {
         const dir = Math.random() < 0.5 ? -1 : 1
