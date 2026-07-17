@@ -149,8 +149,8 @@ export class Game {
       }
     }
 
-    // Update entidades
-    const avoids = this.lightSources(false) // sombras evitan antorchas y velas
+    // Update entidades. Las sombras solo esquivan velas (las antorchas las queman).
+    const avoids = this.candles.map((c) => ({ x: c.x, y: c.y, r: c.r }))
     for (const s of this.shadows) s.update(dt, ws, this.player, avoids)
     for (const o of this.obstacles) o.update(dt, ws)
     for (const t of this.torches) t.update(dt)
@@ -158,8 +158,19 @@ export class Game {
     for (const p of this.powerups) p.update(dt, ws)
     for (const pt of this.particles) pt.update(dt)
 
+    // Las antorchas queman las sombras en su camino
+    for (const t of this.torches) {
+      for (const s of this.shadows) {
+        if (!s.dead && Math.hypot(s.x - t.x, s.y - t.y) < t.r * 0.5) {
+          s.dead = true
+          this.score += 5
+          this.addParticles(s.x, s.y, 9, '#ff9a4d')
+        }
+      }
+    }
+
     // Limpiar fuera de pantalla / muertos
-    this.shadows = this.shadows.filter((s) => s.y - s.r < this.H + 40)
+    this.shadows = this.shadows.filter((s) => !s.dead && s.y - s.r < this.H + 40)
     this.obstacles = this.obstacles.filter((o) => o.y < this.H + 40)
     this.torches = this.torches.filter((t) => t.alive && t.y > -80)
     this.candles = this.candles.filter((c) => !c.collected && c.y - c.r < this.H + 40)

@@ -10,6 +10,35 @@ const game = new Game(ctx, audio)
 
 let currentMode = 'normal'
 
+// ---- Movimiento unificado: teclado / botones / inclinación ----
+const input = { key: 0, btn: 0, tilt: 0 }
+function pushAxis() { game.setAxis(input.key || input.btn || input.tilt) }
+
+// Control por inclinación (giroscopio) en móvil. En iOS requiere permiso tras un gesto.
+let tiltEnabled = false
+function enableTiltOnce() {
+  if (tiltEnabled) return
+  const D = window.DeviceOrientationEvent
+  const attach = () => {
+    tiltEnabled = true
+    window.addEventListener('deviceorientation', (e) => {
+      const g = e.gamma // inclinación izquierda/derecha (-90..90)
+      if (g == null) return
+      const dead = 4
+      let a = 0
+      if (g > dead) a = Math.min(1, (g - dead) / 22)
+      else if (g < -dead) a = Math.max(-1, (g + dead) / 22)
+      input.tilt = a
+      pushAxis()
+    })
+  }
+  if (D && typeof D.requestPermission === 'function') {
+    D.requestPermission().then((s) => { if (s === 'granted') attach() }).catch(() => {})
+  } else if (D) {
+    attach()
+  }
+}
+
 // ---- Tamaño del canvas (responsive + alta densidad) ----
 function resize() {
   const w = window.innerWidth
@@ -29,6 +58,7 @@ resize()
 function pickMode(id) {
   currentMode = id
   audio.ensure()
+  enableTiltOnce()
   game.startMode(id)
 }
 game.onGameOver = (score) => {
@@ -40,13 +70,13 @@ game.onGameOver = (score) => {
 showMenu(pickMode)
 createMuteButton(() => audio.toggleMute())
 createTouchControls({
-  onDir: (dir) => game.setAxis(dir),
+  onDir: (dir) => { input.btn = dir; pushAxis() },
   onFire: () => game.placeTorch(),
 })
 
 // ---- Teclado ----
 const keys = { left: false, right: false }
-function applyAxis() { game.setAxis((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) }
+function applyAxis() { input.key = (keys.right ? 1 : 0) - (keys.left ? 1 : 0); pushAxis() }
 window.addEventListener('keydown', (e) => {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keys.left = true; applyAxis(); e.preventDefault() }
   else if (e.code === 'ArrowRight' || e.code === 'KeyD') { keys.right = true; applyAxis(); e.preventDefault() }

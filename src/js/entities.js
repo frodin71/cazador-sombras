@@ -92,7 +92,7 @@ export class Shadow {
     const dx = player.x - this.x
     this.x += Math.sign(dx) * Math.min(70 * dt, Math.abs(dx))
     this.x += Math.sin(this.wob) * 20 * dt
-    // Evita luces (antorchas y velas)
+    // Evita las velas: desvío lateral y hacia arriba, NUNCA hacia abajo (hacia el jugador)
     for (const a of avoids) {
       const ex = this.x - a.x
       const ey = this.y - a.y
@@ -100,7 +100,7 @@ export class Shadow {
       if (d > 0.01 && d < a.r) {
         const push = (1 - d / a.r) * 240 * dt
         this.x += (ex / d) * push
-        this.y += (ey / d) * push
+        this.y += Math.min(0, (ey / d) * push)
       }
     }
   }
