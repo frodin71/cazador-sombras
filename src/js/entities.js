@@ -207,7 +207,7 @@ export class Blinker {
       this.teleTimer = rand(0.8, 1.3)
       // Solo salta en los 3/4 de arriba; si está cerca del jugador no lo hace
       if (this.y < H * 0.75) {
-        const dir = Math.random() < 0.5 ? -1 : 1
+        const dir = player.x < this.x ? -1 : 1 // siempre salta hacia el jugador
         this.x = clamp(this.x + dir * rand(80, 150), this.r + 4, W - this.r - 4)
         this.flash = 0.25
       }
