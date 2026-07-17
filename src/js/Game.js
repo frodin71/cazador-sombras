@@ -25,6 +25,10 @@ export class Game {
     this.player = new Player(this.W / 2, this.H - 90)
     this.resetEntities()
 
+    // Canvas offscreen para la capa de oscuridad (con agujeros de luz).
+    this.darkCanvas = document.createElement('canvas')
+    this.darkCtx = this.darkCanvas.getContext('2d')
+
     this.last = 0
     this.loop = this.loop.bind(this)
     requestAnimationFrame(this.loop)
@@ -33,6 +37,8 @@ export class Game {
   setViewport(w, h) {
     this.W = w
     this.H = h
+    this.darkCanvas.width = Math.max(1, Math.floor(w))
+    this.darkCanvas.height = Math.max(1, Math.floor(h))
     this.player.y = h - 90
     this.player.setBounds(0, w)
   }
@@ -60,7 +66,7 @@ export class Game {
   startMode(modeId) {
     this.mode = MODES[modeId] || MODES.normal
     this.resetEntities()
-    this.player.baseLight = this.mode.id === 'oscuridad' ? 72 : 130
+    this.player.baseLight = this.mode.id === 'oscuridad' ? 100 : 140
     this.player.reset(this.W / 2)
     this.state = 'playing'
   }
@@ -147,7 +153,7 @@ export class Game {
     const avoids = this.lightSources(false) // sombras evitan antorchas y velas
     for (const s of this.shadows) s.update(dt, ws, this.player, avoids)
     for (const o of this.obstacles) o.update(dt, ws)
-    for (const t of this.torches) t.update(dt, ws)
+    for (const t of this.torches) t.update(dt)
     for (const c of this.candles) c.update(dt, ws)
     for (const p of this.powerups) p.update(dt, ws)
     for (const pt of this.particles) pt.update(dt)
@@ -155,7 +161,7 @@ export class Game {
     // Limpiar fuera de pantalla / muertos
     this.shadows = this.shadows.filter((s) => s.y - s.r < this.H + 40)
     this.obstacles = this.obstacles.filter((o) => o.y < this.H + 40)
-    this.torches = this.torches.filter((t) => t.alive && t.y < this.H + 40)
+    this.torches = this.torches.filter((t) => t.alive && t.y > -80)
     this.candles = this.candles.filter((c) => !c.collected && c.y - c.r < this.H + 40)
     this.powerups = this.powerups.filter((p) => p.y - p.r < this.H + 40)
     this.particles = this.particles.filter((p) => !p.dead)
@@ -257,30 +263,36 @@ export class Game {
     for (const s of this.shadows) s.render(ctx)
     this.player.render(ctx)
 
-    // Glow aditivo en las fuentes de luz
+    // Glow aditivo en las fuentes de luz (halo cálido)
     ctx.globalCompositeOperation = 'lighter'
     for (const l of this.lightSources(true)) {
       const g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r)
-      g.addColorStop(0, 'rgba(255,190,90,0.30)')
-      g.addColorStop(1, 'rgba(255,190,90,0)')
+      g.addColorStop(0, 'rgba(255,205,120,0.55)')
+      g.addColorStop(0.5, 'rgba(255,175,75,0.20)')
+      g.addColorStop(1, 'rgba(255,175,75,0)')
       ctx.fillStyle = g
       ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); ctx.fill()
     }
     ctx.globalCompositeOperation = 'source-over'
 
-    // Oscuridad: cubre la pantalla y "recorta" agujeros de luz
-    ctx.fillStyle = `rgba(3,3,10,${this.mode.darknessAlpha})`
-    ctx.fillRect(0, 0, this.W, this.H)
-    ctx.globalCompositeOperation = 'destination-out'
+    // Oscuridad: capa SEPARADA (offscreen) con agujeros de luz, dibujada encima.
+    // Así la luz revela la escena en vez de mostrar negro.
+    const dctx = this.darkCtx
+    dctx.setTransform(1, 0, 0, 1, 0, 0)
+    dctx.clearRect(0, 0, this.W, this.H)
+    dctx.fillStyle = `rgba(3,3,10,${this.mode.darknessAlpha})`
+    dctx.fillRect(0, 0, this.W, this.H)
+    dctx.globalCompositeOperation = 'destination-out'
     for (const l of this.lightSources(true)) {
-      const g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r)
+      const g = dctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r)
       g.addColorStop(0, 'rgba(0,0,0,1)')
-      g.addColorStop(0.7, 'rgba(0,0,0,0.85)')
+      g.addColorStop(0.65, 'rgba(0,0,0,0.9)')
       g.addColorStop(1, 'rgba(0,0,0,0)')
-      ctx.fillStyle = g
-      ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); ctx.fill()
+      dctx.fillStyle = g
+      dctx.beginPath(); dctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); dctx.fill()
     }
-    ctx.globalCompositeOperation = 'source-over'
+    dctx.globalCompositeOperation = 'source-over'
+    ctx.drawImage(this.darkCanvas, 0, 0, this.W, this.H)
 
     for (const pt of this.particles) pt.render(ctx)
 

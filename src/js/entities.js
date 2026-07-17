@@ -143,10 +143,11 @@ export class Torch {
     this.x = x; this.y = y
     this.life = 6           // segundos
     this.maxLife = 6
-    this.r = 120            // radio de luz / repulsión
+    this.r = 130            // radio de luz / repulsión
+    this.vy = -240          // se lanza hacia adelante (arriba), hacia las sombras
   }
   get alive() { return this.life > 0 }
-  update(dt, worldSpeed) { this.y += worldSpeed * dt; this.life -= dt }
+  update(dt) { this.y += this.vy * dt; this.life -= dt }
   render(ctx) {
     const t = Math.max(0, this.life / this.maxLife)
     ctx.beginPath()

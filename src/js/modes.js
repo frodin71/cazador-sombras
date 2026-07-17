@@ -18,7 +18,7 @@ export const MODES = {
     label: 'Oscuridad',
     emoji: '🌑',
     desc: 'La oscuridad te drena la vida. Sobrevive saltando de luz en luz.',
-    darknessAlpha: 0.9,
+    darknessAlpha: 0.82,
     darknessDamage: true,
     powerups: false,
   },
