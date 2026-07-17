@@ -141,12 +141,12 @@ export class Fleer {
       const d = Math.hypot(ex, ey)
       if (d > 0.01 && d < a.r) {
         const s = 1 - d / a.r
-        ax += (ex / d) * s * 1500
-        if (ey > 0) this.y -= s * 24 * dt // leve retroceso hacia arriba, nunca hacia el jugador
+        ax += (ex / d) * s * 2900
+        if (ey > 0) this.y -= s * 30 * dt // leve retroceso hacia arriba, nunca hacia el jugador
       }
     }
-    this.vx = (this.vx + ax * dt) * Math.exp(-dt * 7)
-    this.vx = clamp(this.vx, -240, 240)
+    this.vx = (this.vx + ax * dt) * Math.exp(-dt * 4.5)
+    this.vx = clamp(this.vx, -340, 340)
     this.x += this.vx * dt
 
     // Persecución lenta + bamboleo
