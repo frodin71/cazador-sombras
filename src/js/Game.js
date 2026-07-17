@@ -85,6 +85,25 @@ export class Game {
     }
   }
 
+  // Busca una posición X (centro) cerca del tope que no pise obstáculos ni velas ya presentes.
+  freeTopX(half) {
+    const band = 100
+    for (let i = 0; i < 14; i++) {
+      const x = rand(half + 8, this.W - half - 8)
+      let ok = true
+      for (const o of this.obstacles) {
+        if (o.y < band && x + half > o.x - 14 && x - half < o.x + o.w + 14) { ok = false; break }
+      }
+      if (ok) {
+        for (const c of this.candles) {
+          if (c.y < band && Math.abs(c.x - x) < half + 26) { ok = false; break }
+        }
+      }
+      if (ok) return x
+    }
+    return rand(half + 8, this.W - half - 8)
+  }
+
   addParticles(x, y, n, color, spread = 140) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2
@@ -135,12 +154,13 @@ export class Game {
     if (this.tObstacle <= 0) {
       this.tObstacle = rand(1.2, 1.8) - diff * 0.6
       const w = rand(60, 120)
-      this.obstacles.push(new Obstacle(rand(0, this.W - w), -30, w, rand(20, 34)))
+      const cx = this.freeTopX(w / 2)
+      this.obstacles.push(new Obstacle(cx - w / 2, -30, w, rand(20, 34)))
     }
     this.tCandle -= dt * ts
     if (this.tCandle <= 0) {
       this.tCandle = rand(3.0, 4.5)
-      this.candles.push(new Candle(rand(30, this.W - 30), -20))
+      this.candles.push(new Candle(this.freeTopX(18), -20))
     }
     if (this.mode.powerups) {
       this.tPowerup -= dt * ts

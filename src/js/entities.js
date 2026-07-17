@@ -124,26 +124,35 @@ export class Fleer {
     this.wob = Math.random() * Math.PI * 2
     this.burnable = false
     this.dead = false
+    this.vx = 0
   }
 
   update(dt, worldSpeed, player, avoids) {
     this.wob += dt * 3
     this.y += (worldSpeed + this.speed) * dt
-    const dx = player.x - this.x
-    this.x += Math.sign(dx) * Math.min(32 * dt, Math.abs(dx))
-    this.x += Math.sin(this.wob) * 14 * dt
-    // Huye de la luz: desvío lateral y hacia arriba, NUNCA hacia abajo (hacia el jugador)
+
+    // Huir de la luz como una fuerza con inercia (no un salto de posición):
+    // acelera lateralmente lejos del centro y arrastra esa velocidad con amortiguación,
+    // así se DESLIZA rodeando la vela en una curva suave.
+    let ax = 0
     for (const a of avoids) {
       const ex = this.x - a.x
       const ey = this.y - a.y
       const d = Math.hypot(ex, ey)
       if (d > 0.01 && d < a.r) {
-        // Solo empuja cuando la luz lo alcanza: fuerte hacia los lados, suave hacia arriba.
-        const f = (1 - d / a.r) * dt
-        this.x += (ex / d) * f * 480
-        this.y += Math.min(0, (ey / d) * f * 240)
+        const s = 1 - d / a.r
+        ax += (ex / d) * s * 1500
+        if (ey > 0) this.y -= s * 24 * dt // leve retroceso hacia arriba, nunca hacia el jugador
       }
     }
+    this.vx = (this.vx + ax * dt) * Math.exp(-dt * 7)
+    this.vx = clamp(this.vx, -240, 240)
+    this.x += this.vx * dt
+
+    // Persecución lenta + bamboleo
+    const dx = player.x - this.x
+    this.x += Math.sign(dx) * Math.min(26 * dt, Math.abs(dx))
+    this.x += Math.sin(this.wob) * 10 * dt
   }
 
   render(ctx) {
