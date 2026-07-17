@@ -1,6 +1,6 @@
 import { MODES } from './modes.js'
 import {
-  Player, Shadow, Obstacle, Torch, Candle, Powerup, Particle,
+  Player, Shadow, Fleer, Obstacle, Torch, Candle, Powerup, Particle,
   POWERUP_TYPES, clamp, rand,
 } from './entities.js'
 
@@ -127,7 +127,9 @@ export class Game {
     this.tShadow -= dt * ts
     if (this.tShadow <= 0) {
       this.tShadow = rand(1.4, 2.0) - diff * 0.9
-      this.shadows.push(new Shadow(rand(20, this.W - 20), -20, rand(30, 70)))
+      const sx = rand(20, this.W - 20)
+      // ~40% acechadores lentos (huyen de la luz), ~60% rápidos (se pueden quemar)
+      this.shadows.push(Math.random() < 0.4 ? new Fleer(sx, -20) : new Shadow(sx, -20))
     }
     this.tObstacle -= dt * ts
     if (this.tObstacle <= 0) {
@@ -149,8 +151,11 @@ export class Game {
       }
     }
 
-    // Update entidades. Las sombras solo esquivan velas (las antorchas las queman).
-    const avoids = this.candles.map((c) => ({ x: c.x, y: c.y, r: c.r }))
+    // Los acechadores lentos huyen de antorchas y velas (las rápidas ignoran esto).
+    const avoids = [
+      ...this.torches.map((t) => ({ x: t.x, y: t.y, r: t.r })),
+      ...this.candles.map((c) => ({ x: c.x, y: c.y, r: c.r })),
+    ]
     for (const s of this.shadows) s.update(dt, ws, this.player, avoids)
     for (const o of this.obstacles) o.update(dt, ws)
     for (const t of this.torches) t.update(dt)
@@ -158,10 +163,10 @@ export class Game {
     for (const p of this.powerups) p.update(dt, ws)
     for (const pt of this.particles) pt.update(dt)
 
-    // Las antorchas queman las sombras en su camino
+    // Las antorchas queman solo a las sombras rápidas (quemables) en su camino
     for (const t of this.torches) {
       for (const s of this.shadows) {
-        if (!s.dead && Math.hypot(s.x - t.x, s.y - t.y) < t.r * 0.5) {
+        if (s.burnable && !s.dead && Math.hypot(s.x - t.x, s.y - t.y) < t.r * 0.5) {
           s.dead = true
           this.score += 5
           this.addParticles(s.x, s.y, 9, '#ff9a4d')

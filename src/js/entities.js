@@ -76,29 +76,69 @@ export class Player {
   }
 }
 
+// Sombra RÁPIDA: persigue fuerte al jugador y muere si una antorcha la toca.
 export class Shadow {
-  constructor(x, y, speed) {
+  constructor(x, y) {
     this.x = x
     this.y = y
-    this.r = rand(14, 22)
-    this.speed = speed
+    this.r = rand(13, 19)
+    this.speed = rand(55, 95)
     this.wob = Math.random() * Math.PI * 2
+    this.burnable = true
+    this.dead = false
+  }
+
+  update(dt, worldSpeed, player) {
+    this.wob += dt * 6
+    this.y += (worldSpeed + this.speed) * dt
+    const dx = player.x - this.x
+    this.x += Math.sign(dx) * Math.min(95 * dt, Math.abs(dx))
+    this.x += Math.sin(this.wob) * 22 * dt
+  }
+
+  render(ctx) {
+    ctx.save()
+    ctx.translate(this.x, this.y)
+    ctx.beginPath()
+    ctx.arc(0, 0, this.r, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(30,6,18,0.94)'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(220,70,90,0.6)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.fillStyle = '#ff3b57'
+    const ey = -this.r * 0.15
+    ctx.beginPath(); ctx.arc(-this.r * 0.32, ey, 2.6, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(this.r * 0.32, ey, 2.6, 0, Math.PI * 2); ctx.fill()
+    ctx.restore()
+  }
+}
+
+// Acechador LENTO: huye de la luz (antorchas y velas). No muere con la luz; hay que esquivarlo.
+export class Fleer {
+  constructor(x, y) {
+    this.x = x
+    this.y = y
+    this.r = rand(16, 24)
+    this.speed = rand(15, 38)
+    this.wob = Math.random() * Math.PI * 2
+    this.burnable = false
+    this.dead = false
   }
 
   update(dt, worldSpeed, player, avoids) {
-    this.wob += dt * 5
+    this.wob += dt * 3
     this.y += (worldSpeed + this.speed) * dt
-    // Persigue lateralmente al jugador
     const dx = player.x - this.x
-    this.x += Math.sign(dx) * Math.min(70 * dt, Math.abs(dx))
-    this.x += Math.sin(this.wob) * 20 * dt
-    // Evita las velas: desvío lateral y hacia arriba, NUNCA hacia abajo (hacia el jugador)
+    this.x += Math.sign(dx) * Math.min(32 * dt, Math.abs(dx))
+    this.x += Math.sin(this.wob) * 14 * dt
+    // Huye de la luz: desvío lateral y hacia arriba, NUNCA hacia abajo (hacia el jugador)
     for (const a of avoids) {
       const ex = this.x - a.x
       const ey = this.y - a.y
       const d = Math.hypot(ex, ey)
       if (d > 0.01 && d < a.r) {
-        const push = (1 - d / a.r) * 240 * dt
+        const push = (1 - d / a.r) * 300 * dt
         this.x += (ex / d) * push
         this.y += Math.min(0, (ey / d) * push)
       }
@@ -110,16 +150,15 @@ export class Shadow {
     ctx.translate(this.x, this.y)
     ctx.beginPath()
     ctx.arc(0, 0, this.r, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(12,6,26,0.92)'
+    ctx.fillStyle = 'rgba(8,12,30,0.92)'
     ctx.fill()
-    ctx.strokeStyle = 'rgba(120,70,180,0.5)'
+    ctx.strokeStyle = 'rgba(90,150,220,0.55)'
     ctx.lineWidth = 2
     ctx.stroke()
-    // Ojos
-    ctx.fillStyle = '#ff4d6d'
-    const ey = -this.r * 0.15
-    ctx.beginPath(); ctx.arc(-this.r * 0.32, ey, 2.4, 0, Math.PI * 2); ctx.fill()
-    ctx.beginPath(); ctx.arc(this.r * 0.32, ey, 2.4, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#63c8ff'
+    const ey = -this.r * 0.1
+    ctx.beginPath(); ctx.arc(-this.r * 0.3, ey, 2.4, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(this.r * 0.3, ey, 2.4, 0, Math.PI * 2); ctx.fill()
     ctx.restore()
   }
 }
