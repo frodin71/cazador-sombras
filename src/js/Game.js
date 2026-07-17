@@ -1,6 +1,6 @@
 import { MODES } from './modes.js'
 import {
-  Player, Shadow, Fleer, Obstacle, Torch, Candle, Powerup, Particle,
+  Player, Shadow, Fleer, Blinker, Obstacle, Torch, Candle, Powerup, Particle,
   POWERUP_TYPES, clamp, rand,
 } from './entities.js'
 
@@ -147,8 +147,10 @@ export class Game {
     if (this.tShadow <= 0) {
       this.tShadow = rand(1.4, 2.0) - diff * 0.9
       const sx = rand(20, this.W - 20)
-      // ~40% acechadores lentos (huyen de la luz), ~60% rápidos (se pueden quemar)
-      this.shadows.push(Math.random() < 0.4 ? new Fleer(sx, -20) : new Shadow(sx, -20))
+      // Mezcla: ~54% rápidos (se queman), ~24% acechadores (huyen de la luz), ~22% teletransportadores (la luz los paraliza)
+      const rr = Math.random()
+      const enemy = rr < 0.24 ? new Fleer(sx, -20) : rr < 0.46 ? new Blinker(sx, -20) : new Shadow(sx, -20)
+      this.shadows.push(enemy)
     }
     this.tObstacle -= dt * ts
     if (this.tObstacle <= 0) {
@@ -176,7 +178,7 @@ export class Game {
       ...this.torches.map((t) => ({ x: t.x, y: t.y, r: t.r })),
       ...this.candles.map((c) => ({ x: c.x, y: c.y, r: c.r })),
     ]
-    for (const s of this.shadows) s.update(dt, ws, this.player, avoids)
+    for (const s of this.shadows) s.update(dt, ws, this.player, avoids, this.W, this.H)
     for (const o of this.obstacles) o.update(dt, ws)
     for (const t of this.torches) t.update(dt)
     for (const c of this.candles) c.update(dt, ws)

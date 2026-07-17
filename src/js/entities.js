@@ -173,6 +173,71 @@ export class Fleer {
   }
 }
 
+// Teletransportador: da saltos cortos en horizontal. La luz lo PARALIZA (lo congela).
+// Solo se teletransporta en los 3/4 superiores (nunca cerca del jugador, para ser justo).
+export class Blinker {
+  constructor(x, y) {
+    this.x = x
+    this.y = y
+    this.r = rand(14, 18)
+    this.speed = rand(35, 60)
+    this.wob = Math.random() * Math.PI * 2
+    this.burnable = false
+    this.dead = false
+    this.teleTimer = rand(1.0, 1.8)
+    this.flash = 0
+    this.paralyzed = false
+  }
+
+  update(dt, worldSpeed, player, lights, W, H) {
+    // La luz (antorchas/velas) lo paraliza mientras lo alcanza
+    this.paralyzed = false
+    for (const l of lights) {
+      if (Math.hypot(this.x - l.x, this.y - l.y) < l.r * 0.9) { this.paralyzed = true; break }
+    }
+    if (this.flash > 0) this.flash -= dt
+    if (this.paralyzed) return // congelado: no baja ni se teletransporta
+
+    this.y += (worldSpeed + this.speed) * dt
+    this.teleTimer -= dt
+    if (this.teleTimer <= 0) {
+      this.teleTimer = rand(1.0, 1.8)
+      // Solo salta en los 3/4 de arriba; si está cerca del jugador no lo hace
+      if (this.y < H * 0.75) {
+        const dir = Math.random() < 0.5 ? -1 : 1
+        this.x = clamp(this.x + dir * rand(80, 150), this.r + 4, W - this.r - 4)
+        this.flash = 0.25
+      }
+    }
+  }
+
+  render(ctx) {
+    ctx.save()
+    ctx.translate(this.x, this.y)
+    if (this.paralyzed) {
+      ctx.beginPath(); ctx.arc(0, 0, this.r + 6, 0, Math.PI * 2)
+      ctx.strokeStyle = 'rgba(120,255,150,0.5)'; ctx.lineWidth = 2; ctx.stroke()
+    }
+    if (this.flash > 0) {
+      ctx.globalAlpha = Math.min(1, this.flash * 3)
+      ctx.beginPath(); ctx.arc(0, 0, this.r + 4, 0, Math.PI * 2)
+      ctx.strokeStyle = '#3ef07a'; ctx.lineWidth = 2; ctx.stroke()
+      ctx.globalAlpha = 1
+    }
+    ctx.beginPath(); ctx.arc(0, 0, this.r, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(6,22,10,0.92)'
+    ctx.fill()
+    ctx.strokeStyle = '#3ef07a'
+    ctx.lineWidth = 2.4
+    ctx.stroke()
+    ctx.fillStyle = '#8effb0'
+    const ey = -this.r * 0.12
+    ctx.beginPath(); ctx.arc(-this.r * 0.3, ey, 2.2, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(this.r * 0.3, ey, 2.2, 0, Math.PI * 2); ctx.fill()
+    ctx.restore()
+  }
+}
+
 export class Obstacle {
   constructor(x, y, w, h) {
     this.x = x; this.y = y; this.w = w; this.h = h
