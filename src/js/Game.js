@@ -163,6 +163,17 @@ export class Game {
     for (const p of this.powerups) p.update(dt, ws)
     for (const pt of this.particles) pt.update(dt)
 
+    // Las antorchas no pueden ocupar el mismo espacio que un obstáculo: se apagan al chocar
+    for (const t of this.torches) {
+      for (const o of this.obstacles) {
+        if (circleRect(t.x, t.y, 10, o.x, o.y, o.w, o.h)) {
+          t.life = 0
+          this.addParticles(t.x, t.y, 6, '#ffb24d')
+          break
+        }
+      }
+    }
+
     // Las antorchas queman solo a las sombras rápidas (quemables) en su camino
     for (const t of this.torches) {
       for (const s of this.shadows) {

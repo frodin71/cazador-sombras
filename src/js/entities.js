@@ -138,9 +138,10 @@ export class Fleer {
       const ey = this.y - a.y
       const d = Math.hypot(ex, ey)
       if (d > 0.01 && d < a.r) {
-        const push = (1 - d / a.r) * 300 * dt
-        this.x += (ex / d) * push
-        this.y += Math.min(0, (ey / d) * push)
+        // Solo empuja cuando la luz lo alcanza: fuerte hacia los lados, suave hacia arriba.
+        const f = (1 - d / a.r) * dt
+        this.x += (ex / d) * f * 480
+        this.y += Math.min(0, (ey / d) * f * 240)
       }
     }
   }
